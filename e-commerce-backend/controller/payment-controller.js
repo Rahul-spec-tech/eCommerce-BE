@@ -11,7 +11,7 @@ const createCheckoutSession = async (req, res) => {
                 name: product.productDetails.title, 
                 images: [product.productDetails.image], 
             },
-            unit_amount: product.productDetails.price, 
+            unit_amount: product.productDetails.price* 100, 
         },
         quantity: product.quantity,
     }));
