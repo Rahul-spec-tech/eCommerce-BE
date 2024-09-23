@@ -5,11 +5,9 @@ const isValidId = (id) => typeof id === 'string' && id.length > 0;
 
 exports.addToCart = async (req, res) => {
     let { userId, productId } = req.body;
-
     if (!isValidId(userId) || !isValidId(productId)) {
         return res.status(400).send({ message: 'Invalid user or product ID' });
     }
-
     try {
         let cart = await Cart.findOne({ userId });
         if (cart) {
@@ -32,11 +30,9 @@ exports.addToCart = async (req, res) => {
 
 exports.removeFromCart = async (req, res) => {
     let { userId, productId } = req.body;
-
     if (!isValidId(userId) || !isValidId(productId)) {
         return res.status(400).send({ message: 'Invalid user or product ID' });
     }
-
     try {
         let cart = await Cart.findOne({ userId });
         if (cart) {
@@ -52,16 +48,39 @@ exports.removeFromCart = async (req, res) => {
 
 exports.getCartByUserId = async (req, res) => {
     const { userId } = req.params;
-
     if (!isValidId(userId)) {
         return res.status(400).send({ message: 'Invalid user ID' });
     }
-
     try {
         const cart = await Cart.findOne({ userId });
         res.status(200).send(cart || { products: [] });
     } catch (error) {
         console.error('Error fetching cart:', error.message);
         res.status(500).send({ message: 'Internal server error' });
+    }
+};
+
+exports.updateQuantity = async (req, res) => {
+    const { userId, productId, act} = req.body;
+    if(!isValidId(userId) || !isValidId(productId) || typeof act !== 'number'){
+        return res.status(400).send({ message: 'Invalid request'});
+    }
+    try{
+        let cart = await Cart.findOne({ userId });
+        if(cart){
+            const productIndex = cart.products.findIndex(ind => ind.productId === productId);
+            if(productIndex > -1){
+                cart.products[productIndex].quantity +=act;
+                if(cart.products[productIndex].quantity <= 0){
+                    cart.products.splice(productIndex, 1);
+                }
+                await cart.save();
+            }
+        }
+        res.status(200).send({message: 'Quantity updated', cart});
+    }
+    catch (error) {
+        console.error('Error updating quantity', error.message);
+        res.status(500).send({ message: 'Internal server error', error: error.message});
     }
 };

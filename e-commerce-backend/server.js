@@ -20,6 +20,7 @@ const homeRoute = require('./routes/home-router');
 const cartRoute = require('./routes/cart-router');
 const userRoute = require('./routes/user-router');
 const authRoute = require('./routes/auth-router');
+const paymentRoute = require('./routes/payment-router');
 
 //middleware
 app.use(cors({
@@ -41,6 +42,7 @@ app.use('/products', productRoute);
 app.use('/carts', cartRoute);
 app.use('/users', userRoute);
 app.use('/auth', authRoute);
+app.use('/payment', paymentRoute);
 
 //mongoose
 mongoose.connect(process.env.DATABASE_URL)
