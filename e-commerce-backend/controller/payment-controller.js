@@ -1,9 +1,9 @@
 const Stripe = require('stripe'); 
 const stripe = Stripe(process.env.STRIPE_SECRET || "sk_test_51Q1qob02S3FGbgr7P1UQTZoyKN1RBLEkMQw4asG9xdm15IEMqwfeTBK5Cf1az8niSs9v2hLkYgEOQofgCs1mtUYm00QUpPArcO");
+const Payment = require('../model/Payment');
 
 const createCheckoutSession = async (req, res) => {
     const { cartItems } = req.body;
-    //console.log("Cart Items", cartItems);
     const items = cartItems.map((product) => ({
         price_data: {
             currency: 'inr',
@@ -24,6 +24,16 @@ const createCheckoutSession = async (req, res) => {
             success_url: 'http://localhost:3000/success', 
             cancel_url: 'http://localhost:3000/cancel', 
         });
+        const paymentDetails = new Payment({
+            sessionId: session.id,
+            amount: session.amount_total,
+            currency: session.currency,
+            cartItems: cartItems.map(item => ({
+                productId: item.productId,
+                quantity: item.quantity
+            })),
+        });
+        await paymentDetails.save();
         res.json({ id: session.id });
     } catch (error) {
         console.error('Stripe checkout session creation failed:', error);

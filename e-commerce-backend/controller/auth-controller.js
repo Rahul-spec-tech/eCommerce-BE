@@ -11,7 +11,7 @@ module.exports.login = (req, res) => {
 		})
 			.then((user) => {
 				if (user) {
-					const token = jwt.sign({ user: username, id: user._id }, 'secret_key', { expiresIn: '1d'});
+					const token = jwt.sign({ user: username, id: user._id }, 'secret_key', { expiresIn: '1h'});
 					res.json({
 						username: user.username,
 						userId: user._id,

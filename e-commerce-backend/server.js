@@ -1,10 +1,12 @@
-//initializes
 const mongoose = require('mongoose');
 const express = require('express');
 const cors = require('cors');
 const path = require('path');
 const dotenv = require('dotenv');
 const dotenvExpand = require('dotenv-expand');
+const bodyParser = require('body-parser');
+const Stripe = require('stripe');
+const Payment = require('./model/Payment');
 const myEnv = dotenv.config();
 dotenvExpand.expand(myEnv);
 
@@ -44,7 +46,34 @@ app.use('/users', userRoute);
 app.use('/auth', authRoute);
 app.use('/payment', paymentRoute);
 
-//mongoose
+const stripe = Stripe(process.env.STRIPE_SECRET);
+app.post('/webhook', bodyParser.raw({ type: 'application/json' }), async (req, res) => {
+  const sig = req.headers['stripe-signature'];
+  let event;
+  try {
+    event = stripe.webhooks.constructEvent(req.body, sig, process.env.STRIPE_WEBHOOK_SECRET);
+  } 
+  catch (err) {
+    return res.status(400).send(`Webhook Error: ${err.message}`);
+  }
+  if (event.type === 'checkout.session.completed') {
+    const session = event.data.object;
+    const paymentDetails = new Payment({
+      sessionId: session.id,
+      amount: session.amount_total / 100, 
+      currency: session.currency,
+      cartItems: JSON.parse(session.metadata.cartItems || '[]'), 
+    });
+    try {
+      await paymentDetails.save();
+    } 
+    catch (err) {
+      return res.status(500).send('Server error');
+    }
+  }
+  res.status(200).send('Webhook received');
+});
+
 mongoose.connect(process.env.DATABASE_URL)
   .then(() => {
     app.listen(port, () => {
