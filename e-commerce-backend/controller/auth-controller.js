@@ -11,7 +11,7 @@ module.exports.login = (req, res) => {
 		})
 			.then((user) => {
 				if (user) {
-					const token = jwt.sign({ user: username, id: user._id }, 'secret_key', { expiresIn: '1h'});
+					const token = jwt.sign({ user: username, id: user._id }, process.env.SECRET_KEY, { expiresIn: '1d' });
 					res.json({
 						username: user.username,
 						userId: user._id,
@@ -19,8 +19,7 @@ module.exports.login = (req, res) => {
 					});
 				} 
 				else {
-					res.status(401);
-					res.send('username or password is incorrect');
+					res.status(401).send('Username or password is incorrect');
 				}
 			})
 			.catch((err) => {
@@ -31,4 +30,19 @@ module.exports.login = (req, res) => {
 	else {
 		res.status(400).json({ error: 'Username and password are required' });
 	}
+};
+
+module.exports.checkAuth = (req, res) => {
+    const token = req.headers.authorization?.split(' ')[1];
+
+    if (!token) {
+        return res.status(401).json({ message: 'Token not provided' });
+    }
+
+    jwt.verify(token, process.env.SECRET_KEY, (err, decoded) => {
+        if (err || !decoded) {
+            return res.status(401).json({ message: 'Invalid token' });
+        }
+        return res.status(200).json({ redirect: '/home' });
+    });
 };

@@ -7,6 +7,7 @@ const dotenvExpand = require('dotenv-expand');
 const bodyParser = require('body-parser');
 const Stripe = require('stripe');
 const Payment = require('./model/Payment');
+const authMiddleware = require('./middleware/auth-middleware');
 const myEnv = dotenv.config();
 dotenvExpand.expand(myEnv);
 
@@ -30,6 +31,7 @@ app.use(cors({
   methods: 'GET, POST, PUT, DELETE',
   credentials: true,
 }));
+//app.use(authMiddleware);
 app.use(express.static(path.join(__dirname, '/public')));
 app.use(express.urlencoded({ extended: true }));
 app.use(express.json());
@@ -39,12 +41,12 @@ app.set('view engine', 'ejs');
 app.set('views', 'views');
 app.disable('view cache');
 
-app.use('/', homeRoute);
+app.use('/auth', authRoute); 
+app.use('/', authMiddleware, homeRoute);
 app.use('/products', productRoute);
-app.use('/carts', cartRoute);
-app.use('/users', userRoute);
-app.use('/auth', authRoute);
-app.use('/payment', paymentRoute);
+app.use('/carts', authMiddleware, cartRoute);
+app.use('/users',authMiddleware, userRoute);
+app.use('/payment', authMiddleware, paymentRoute);
 
 const stripe = Stripe(process.env.STRIPE_SECRET);
 app.post('/webhook', bodyParser.raw({ type: 'application/json' }), async (req, res) => {
